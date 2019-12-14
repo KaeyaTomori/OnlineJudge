@@ -107,7 +107,8 @@ class ContestRankAPI(APIView):
         if self.contest.rule_type == ContestRuleType.ACM:
             return ACMContestRank.objects.filter(contest=self.contest,
                                                  user__admin_type=AdminType.REGULAR_USER,
-                                                 user__is_disabled=False).\
+                                                 user__is_disabled=False,
+                                                 frozen=self.contest.frozen).\
                 select_related("user").order_by("-accepted_number", "total_time")
         else:
             return OIContestRank.objects.filter(contest=self.contest,
@@ -135,7 +136,7 @@ class ContestRankAPI(APIView):
         if force_refresh == "1" and is_contest_admin:
             qs = self.get_rank()
         else:
-            cache_key = f"{CacheKey.contest_rank_cache}:{self.contest.id}"
+            cache_key = f"{CacheKey.contest_rank_cache}:{self.contest.id}:{self.contest.forzen}"
             qs = cache.get(cache_key)
             if not qs:
                 qs = self.get_rank()
