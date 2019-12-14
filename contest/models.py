@@ -24,6 +24,7 @@ class Contest(models.Model):
     # 是否可见 false的话相当于删除
     visible = models.BooleanField(default=True)
     allowed_ip_ranges = JSONField(default=list)
+    frozen = models.BooleanField(default=False)
 
     @property
     def status(self):
@@ -71,10 +72,11 @@ class ACMContestRank(AbstractContestRank):
     # {"23": {"is_ac": True, "ac_time": 8999, "error_number": 2, "is_first_ac": True}}
     # key is problem id
     submission_info = JSONField(default=dict)
+    frozen = models.BooleanField(default=False)
 
     class Meta:
         db_table = "acm_contest_rank"
-        unique_together = (("user", "contest"),)
+        unique_together = (("user", "contest", "frozen"),)
 
 
 class OIContestRank(AbstractContestRank):
