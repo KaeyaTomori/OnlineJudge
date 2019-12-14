@@ -83,7 +83,8 @@ class ACMContestRankSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
 
     def get_user(self, obj):
-        return UsernameSerializer(obj.user, need_real_name=self.is_contest_admin).data
+        # return UsernameSerializer(obj.user, need_real_name=self.is_contest_admin).data
+        return UsernameSerializer(obj.user, need_real_name=True).data
 
 
 class OIContestRankSerializer(serializers.ModelSerializer):
