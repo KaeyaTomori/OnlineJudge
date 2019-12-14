@@ -5,13 +5,14 @@ from ipaddress import ip_network
 
 import dateutil.parser
 from django.http import FileResponse
+from django.db import transaction
 
 from account.decorators import check_contest_permission, ensure_created_by
 from account.models import User
 from submission.models import Submission, JudgeStatus
 from utils.api import APIView, validate_serializer
 from utils.cache import cache
-from utils.constants import CacheKey
+from utils.constants import CacheKey, ContestRuleType
 from utils.shortcuts import rand_str
 from utils.tasks import delete_files
 from ..models import Contest, ContestAnnouncement, ACMContestRank
@@ -239,3 +240,41 @@ class DownloadContestSubmissions(APIView):
         resp["Content-Type"] = "application/zip"
         resp["Content-Disposition"] = f"attachment;filename={os.path.basename(zip_path)}"
         return resp
+
+
+class FrozenACMContestRank(APIView):
+    def _create_duplicate_frozen_rank(self, contest):
+        assert(contest.rule_type == ContestRuleType.ACM)
+        qs = ACMContestRank.objects.filter(contest=contest)
+        for ins in qs:
+            ACMContestRank.objects.create(
+                user=ins.user,
+                contest=ins.contest,
+                submission_number=ins.submission_number,
+                accepted_number=ins.accepted_number,
+                total_time=ins.total_time,
+                submission_info=ins.submission_info,
+                frozen=True
+            )
+
+
+    def patch(self, request):
+        contest_id = request.GET.get("contest_id")
+        if not contest_id:
+            return self.error("Parameter error")
+        try:
+            contest = Contest.objects.get(kd=contest_id)
+            ensure_created_by(contest, request.user)
+        except Contest.DoesNotExist:
+            return self.error("Contest does not exist")
+        
+        ok = False
+        with transaction.atomic():
+            self._create_duplicate_frozen_rank(contest)
+            contest.frozen = True
+            contest.save()
+            ok = True
+        if ok:
+            return self.success()
+        else:
+            return self.error('failed')
