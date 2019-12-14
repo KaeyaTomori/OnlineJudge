@@ -55,13 +55,16 @@ if not os.path.exists(team_path):
 outfile = open(os.path.join(cdp_path, 'generate.xml'), 'wb')
 root = ET.Element('contest')
 
-school_names = ['School of Computer and Communication Engineering',
-                'School of Automation and Electrical Engineering',
-                'School of Advanced Engineering',
-                'School of Mathematics and Physics',
-                'Donlinks School of Economics and Management',
-                'School of Civil and Resources Engineering',
-                ]
+school_names = {
+    '计算机与通信工程学院': 'School of Computer and Communication Engineering',
+    '自动化学院': 'School of Automation and Electrical Engineering',
+    '高等工程师学院': 'School of Advanced Engineering',
+    '数理学院': 'School of Mathematics and Physics',
+    '东凌经济管理学院': 'Donlinks School of Economics and Management',
+    '机械工程学院': 'School of Machanical Engineering',
+    '化学与生物工程学院': 'School of Chemistry and Biological Engineering',
+    '土木与资源工程学院': 'School of Civil and Resources Engineering'
+}
 
 languages = [
     {'id': 1, 'name': 'c'},
@@ -119,7 +122,7 @@ def add_info(contest, title_en):
 
 def add_region():
     idx = 1
-    for school in school_names:
+    for school in school_names.values():
         region = ET.SubElement(root, 'region')
 
         external_id = ET.SubElement(region, 'external-id')
@@ -173,7 +176,7 @@ def add_problems(contest):
         ids.text = str(idx)
         idx += 1
 
-        letter = ET.SubElement(problem, '_id')
+        letter = ET.SubElement(problem, 'letter')
         letter.text = problem_object._id
 
         name = ET.SubElement(problem, 'name')
@@ -221,15 +224,15 @@ def add_team(user_object):
 
     region = ET.SubElement(team, 'region')
     # region.text = school_names[school_id - 1]
-    region.text = user_object.userprofile.school
+    region.text = school_names[user_object.userprofile.school]
 
     name = ET.SubElement(team, 'name')
-    # name.text = get_english_name(user_object.userprofile.real_name)
-    name.text = user_object.userprofile.real_name
+    name.text = get_english_name(user_object.userprofile.real_name)
+    # name.text = user_object.userprofile.real_name
 
     university = ET.SubElement(team, 'university')
-    # university.text = get_english_name(user_object.userprofile.real_name)
-    university.text = user_object.userprofile.real_name
+    university.text = get_english_name(user_object.userprofile.real_name)
+    # university.text = user_object.userprofile.real_name
 
     aim_avatar_path = os.path.join(logo_path, str(user_object.id) + '.png')
     user_avatar_path = DATA_DIR + user_object.userprofile.avatar
@@ -279,7 +282,7 @@ def add_runs(contest, problem_id_map):
         assert(item.result != JudgeStatus.PENDING)
         assert(item.result != JudgeStatus.JUDGING)
         assert(item.result != JudgeStatus.PARTIALLY_ACCEPTED)
-        judgement = judgements[judge_state_mapping[item.result]]
+        judgement = judgements[judge_state_mapping[item.result] - 1]
 
         solved.text = judgement['solved']
         penalty.text = judgement['penalty']
