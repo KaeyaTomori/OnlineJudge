@@ -333,7 +333,7 @@ class JudgeDispatcher(DispatcherBase):
             cache.delete(f"{CacheKey.contest_rank_cache}:{self.contest.id}")
 
         def get_rank(model):
-            return model.objects.select_for_update().get(user_id=self.submission.user_id, contest=self.contest)
+            return model.objects.select_for_update().get(user_id=self.submission.user_id, contest=self.contest, frozen=False)
 
         if self.contest.rule_type == ContestRuleType.ACM:
             model = ACMContestRank

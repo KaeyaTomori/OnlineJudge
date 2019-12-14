@@ -299,7 +299,7 @@ def add_award(team_id, typ, citation):
 
 
 def add_medal(contest):
-    rank =  ACMContestRank.objects.filter(contest_id=contest.id). \
+    rank =  ACMContestRank.objects.filter(contest_id=contest.id, frozen=False). \
             select_related("user"). \
             order_by("-accepted_number", "total_time"). \
             values("id", "user__id", "user__username", "user__userprofile__real_name",

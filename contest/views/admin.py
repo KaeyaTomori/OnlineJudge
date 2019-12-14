@@ -163,7 +163,7 @@ class ContestAnnouncementAPI(APIView):
 class ACMContestHelper(APIView):
     @check_contest_permission(check_type="ranks")
     def get(self, request):
-        ranks = ACMContestRank.objects.filter(contest=self.contest, accepted_number__gt=0) \
+        ranks = ACMContestRank.objects.filter(contest=self.contest, accepted_number__gt=0, frozen=False) \
             .values("id", "user__username", "user__userprofile__real_name", "submission_info")
         results = []
         for rank in ranks:
@@ -245,33 +245,38 @@ class DownloadContestSubmissions(APIView):
 class FrozenACMContestRank(APIView):
     def _create_duplicate_frozen_rank(self, contest):
         assert(contest.rule_type == ContestRuleType.ACM)
-        qs = ACMContestRank.objects.filter(contest=contest)
+        qs = ACMContestRank.objects.filter(contest=contest, frozen=False)
         for ins in qs:
-            ACMContestRank.objects.create(
+            ins_dup, created = ACMContestRank.objects.get_or_create(
                 user=ins.user,
                 contest=ins.contest,
-                submission_number=ins.submission_number,
-                accepted_number=ins.accepted_number,
-                total_time=ins.total_time,
-                submission_info=ins.submission_info,
                 frozen=True
             )
+            ins_dup.submission_number = ins.submission_number
+            ins_dup.accepted_number = ins.accepted_number
+            ins_dup.total_time = ins.total_time
+            ins_dup.submission_info = ins.submission_info
+            ins_dup.save()
 
 
     def patch(self, request):
-        contest_id = request.GET.get("contest_id")
+        contest_id = request.data.get("id")
+        frozen = request.data.get("frozen")
         if not contest_id:
             return self.error("Parameter error")
         try:
-            contest = Contest.objects.get(kd=contest_id)
+            contest = Contest.objects.get(pk=contest_id)
             ensure_created_by(contest, request.user)
         except Contest.DoesNotExist:
             return self.error("Contest does not exist")
+        if frozen == contest.frozen:
+            return self.success("already the same")
         
         ok = False
         with transaction.atomic():
-            self._create_duplicate_frozen_rank(contest)
-            contest.frozen = True
+            if frozen:
+                self._create_duplicate_frozen_rank(contest)
+            contest.frozen = not contest.frozen
             contest.save()
             ok = True
         if ok:
