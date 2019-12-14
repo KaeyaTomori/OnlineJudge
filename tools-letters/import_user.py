@@ -21,9 +21,18 @@ def create_if_not_exists(username,
                          email,
                          password,
                          admin_type=AdminType.REGULAR_USER,
-                         real_name=None):
+                         real_name=None,
+                         school=None):
     try:
-        User.objects.get(username=username)
+        ins = User.objects.get(username=username)
+        ins.userprofile.real_name=real_name
+        ins.userprofile.school=school
+        ins.userprofile.save()
+        
+        ins.email=email
+        ins.admin_type=admin_type
+        ins.password=make_password(password)
+        ins.save()
     except User.DoesNotExist:
         with transaction.atomic():
             ins, created = User.objects.get_or_create(
@@ -34,7 +43,8 @@ def create_if_not_exists(username,
             )
             ins, created = UserProfile.objects.get_or_create(
                 user=ins,
-                real_name=real_name
+                real_name=real_name,
+                school=school
             )
 
 
@@ -48,11 +58,12 @@ create_if_not_exists(
 with open('2019-users-with-pwd.csv') as f:
     reader = csv.reader(f)
     for row in reader:
-        student_id, real_name, _, _, _, email, password = row
+        student_id, real_name, _, school, _, email, password = row
         create_if_not_exists(
             username=student_id,
             email=email,
             password=password,
-            real_name=real_name
+            real_name=real_name,
+            school=school
         )
 
