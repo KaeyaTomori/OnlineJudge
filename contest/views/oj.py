@@ -103,12 +103,12 @@ class ContestAccessAPI(APIView):
 
 
 class ContestRankAPI(APIView):
-    def get_rank(self):
+    def get_rank(self, frozen = self.contest.frozen):
         if self.contest.rule_type == ContestRuleType.ACM:
             return ACMContestRank.objects.filter(contest=self.contest,
                                                  user__admin_type=AdminType.REGULAR_USER,
                                                  user__is_disabled=False,
-                                                 frozen=self.contest.frozen).\
+                                                 frozen=frozen).\
                 select_related("user").order_by("-accepted_number", "total_time")
         else:
             return OIContestRank.objects.filter(contest=self.contest,
@@ -134,7 +134,7 @@ class ContestRankAPI(APIView):
             serializer = ACMContestRankSerializer
 
         if force_refresh == "1" and is_contest_admin:
-            qs = self.get_rank()
+            qs = self.get_rank(frozen=False)
         else:
             cache_key = f"{CacheKey.contest_rank_cache}:{self.contest.id}:{self.contest.frozen}"
             qs = cache.get(cache_key)
