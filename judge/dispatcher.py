@@ -330,7 +330,8 @@ class JudgeDispatcher(DispatcherBase):
 
     def update_contest_rank(self):
         if self.contest.rule_type == ContestRuleType.OI or self.contest.real_time_rank:
-            cache.delete(f"{CacheKey.contest_rank_cache}:{self.contest.id}")
+            for frozen in ('True', 'False'):
+                cache.delete(f"{CacheKey.contest_rank_cache}:{self.contest.id}:{frozen}")
 
         def get_rank(model):
             return model.objects.select_for_update().get(user_id=self.submission.user_id, contest=self.contest, frozen=False)

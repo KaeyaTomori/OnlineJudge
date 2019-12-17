@@ -61,8 +61,9 @@ class ContestAPI(APIView):
             except ValueError:
                 return self.error(f"{ip_range} is not a valid cidr network")
         if not contest.real_time_rank and data.get("real_time_rank"):
-            cache_key = f"{CacheKey.contest_rank_cache}:{contest.id}"
-            cache.delete(cache_key)
+            for frozen in ('True', 'False'):
+                cache_key = f"{CacheKey.contest_rank_cache}:{contest.id}:{frozen}"
+                cache.delete(cache_key)
 
         for k, v in data.items():
             setattr(contest, k, v)

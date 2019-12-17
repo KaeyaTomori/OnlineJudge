@@ -136,7 +136,7 @@ class ContestRankAPI(APIView):
         if force_refresh == "1" and is_contest_admin:
             qs = self.get_rank()
         else:
-            cache_key = f"{CacheKey.contest_rank_cache}:{self.contest.id}:{self.contest.forzen}"
+            cache_key = f"{CacheKey.contest_rank_cache}:{self.contest.id}:{self.contest.frozen}"
             qs = cache.get(cache_key)
             if not qs:
                 qs = self.get_rank()
